@@ -22,8 +22,8 @@ class UserProfile(models.Model):
 class Posts(models.Model):
     user=models.ForeignKey(User,on_delete=models.CASCADE,related_name="userpost")
     title=models.CharField(max_length=200)
-    post_image=models.ImageField(upload_to="posters",null=True)
-    create_date=models.DateField(auto_now_add=True)
+    post_image=models.ImageField(upload_to="posters",null=True,blank=True)
+    create_date=models.DateTimeField(auto_now_add=True)
     liked_by=models.ManyToManyField(User,related_name="post_like")
 
     def __str__(self):
@@ -50,6 +50,11 @@ class Stories(models.Model):
 
     def __str__(self):
         return self.title
+    
+    def save(self,*args,**kwargs):
+        self.expiry_date=timezone.now()+timezone.timedelta(days=1)
+
+        super().save(*args,**kwargs)
     
 
 
