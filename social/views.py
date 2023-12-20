@@ -1,14 +1,20 @@
-from typing import Any
-from django.db.models.query import QuerySet
-from django.forms.models import BaseModelForm
-from django.http import HttpResponse
+
 from django.shortcuts import render,redirect
 from django.views.generic import View,TemplateView,FormView,CreateView,UpdateView,DetailView,ListView
-from social.forms import RegisterationForm,LoginForm,UserProfileForm,PostForm,CommentForm,StoryForm
 from django.urls import reverse
 from django.contrib.auth import authenticate,login,logout
-from social.models import UserProfile,Posts,Stories
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
+from django.contrib import messages
+
+from social.forms import RegisterationForm,LoginForm,UserProfileForm,PostForm,CommentForm,StoryForm
+from social.models import UserProfile,Posts,Stories
+from social.decorators import login_required
+
+
+decs=[login_required,never_cache]
+
 
 class SignUpView(CreateView):
 
@@ -53,11 +59,11 @@ class SignInView(FormView):
             user_object=authenticate(request,username=uname,password=pwd)
             if user_object:
                 login(request,user_object)
-                print("success")
                 return redirect("index")
-        print("failed")
+        messages.error(request,"Failed to login invalid credentials..")
         return render(request,"login.html",{"form":form})
-    
+
+@method_decorator(decs,name="dispatch")
 class IndexView(CreateView,ListView):
 
     template_name="index.html"
@@ -85,7 +91,7 @@ class IndexView(CreateView,ListView):
         return context
     
 
-
+@method_decorator(decs,name="dispatch")
 class SignOutView(View):
 
     def get(self,request,*args,**Kwargs):
@@ -94,6 +100,7 @@ class SignOutView(View):
     
 
 # localhost:8000/profile/<int:pk>/change/
+@method_decorator(decs,name="dispatch")
 class ProfileUpdateView(UpdateView):
 
     template_name="profile_add.html"
@@ -102,13 +109,17 @@ class ProfileUpdateView(UpdateView):
 
     def get_success_url(self):
         return reverse("index")
-    
 
+
+
+@method_decorator(decs,name="dispatch")
 class ProfileDetailView(DetailView):
     template_name="profile_detail.html"
     model=UserProfile
     context_object_name="data"
 
+
+@method_decorator(decs,name="dispatch")
 class ProfileListView(ListView):
     # def get(self,request,*args,**kwargs):
     #     qs=UserProfile.objects.all().exclude(user=request.user)
@@ -121,7 +132,7 @@ class ProfileListView(ListView):
         return UserProfile.objects.all().exclude(user=self.request.user)
     
 
-
+@method_decorator(decs,name="dispatch")
 class FollowView(View):
 
     def post(self,request,*args,**kwargs):
@@ -135,6 +146,8 @@ class FollowView(View):
         return redirect("index")
     
 
+
+@method_decorator(decs,name="dispatch")
 class PostLikeView(View):
 
     def post(self,request,*args,**kwargs):
@@ -148,6 +161,7 @@ class PostLikeView(View):
         return redirect("index")
     
 
+@method_decorator(decs,name="dispatch")
 class CommentView(CreateView):
     template_name="index.html"
     form_class=CommentForm
@@ -163,7 +177,7 @@ class CommentView(CreateView):
         return super().form_valid(form)
 
 
-
+@method_decorator(decs,name="dispatch")
 class ProfileBlockView(View):
 
     def post(self,request,*args,**kwargs):
@@ -177,6 +191,7 @@ class ProfileBlockView(View):
         return redirect("index")
     
 
+@method_decorator(decs,name="dispatch")
 class StoriesCreateView(View):
     
     def post(self,request,*args,**kwargs):
